@@ -6,3 +6,9 @@ export interface LoginPayload {
 export interface LoginResponse {
     token: string;
 }
+
+export interface TokenModel {
+    name: string;
+    email: string;
+    role: string;
+}

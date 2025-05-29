@@ -1,8 +1,8 @@
-import type { Notification} from 'src/context/NotificationContext';
+import type { Notification} from '@/context/NotificationContext';
 
 import React from 'react';
 
-import { useNotification } from 'src/context/NotificationContext';
+import { useNotification } from '@/context/NotificationContext';
 
 const SnackBarComponent: React.FC = () => {
   const { notifications, removeNotification } = useNotification();
