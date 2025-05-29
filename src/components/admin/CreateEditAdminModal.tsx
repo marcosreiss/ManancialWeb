@@ -11,11 +11,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import type { Admin } from '@/models/adminModel';
 
+type FormAdmin = Admin & { password?: string };
+
 type Props = {
     open: boolean;
     onClose: () => void;
     initialData?: Admin | null;
-    onSubmit: (data: Admin) => void;
+    onSubmit: (data: FormAdmin) => void;
     readOnly?: boolean;
     loading?: boolean;
 };
@@ -28,32 +30,48 @@ export default function CreateEditAdminModal({
     readOnly = false,
     loading = false,
 }: Props) {
+    const isEditMode = !!initialData;
+
     const {
         control,
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm<Admin>({
+    } = useForm<FormAdmin>({
         defaultValues: {
             id: '',
             fullName: '',
             email: '',
             cpf: '',
-            profilePictureUrl: '',
+            phoneNumber: '',
             isActive: true,
             createdAt: '',
+            password: '',
         },
     });
 
     useEffect(() => {
-        if (open && initialData) {
-            reset(initialData);
+        if (open) {
+            if (isEditMode && initialData) {
+                reset(initialData);
+            } else {
+                reset({
+                    id: '',
+                    fullName: '',
+                    email: '',
+                    cpf: '',
+                    phoneNumber: '',
+                    isActive: true,
+                    createdAt: '',
+                    password: '',
+                });
+            }
         }
-    }, [open, initialData, reset]);
+    }, [open, initialData, reset, isEditMode]);
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle>Editar Admin</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Editar Admin' : 'Novo Admin'}</DialogTitle>
 
             <DialogContent dividers>
                 <Box component="form" noValidate sx={{ mt: 1 }}>
@@ -73,6 +91,7 @@ export default function CreateEditAdminModal({
                             />
                         )}
                     />
+
                     <Controller
                         name="email"
                         control={control}
@@ -89,12 +108,13 @@ export default function CreateEditAdminModal({
                                 margin="normal"
                                 fullWidth
                                 label="Email"
-                                disabled={readOnly}
+                                disabled={readOnly || isEditMode} // desabilita edição de email
                                 error={!!errors.email}
                                 helperText={errors.email?.message}
                             />
                         )}
                     />
+
                     <Controller
                         name="cpf"
                         control={control}
@@ -111,6 +131,43 @@ export default function CreateEditAdminModal({
                             />
                         )}
                     />
+
+                    <Controller
+                        name="phoneNumber"
+                        control={control}
+                        rules={{ required: 'Telefone é obrigatório' }}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                margin="normal"
+                                fullWidth
+                                label="Telefone"
+                                disabled={readOnly}
+                                error={!!errors.phoneNumber}
+                                helperText={errors.phoneNumber?.message}
+                            />
+                        )}
+                    />
+
+                    {!isEditMode && (
+                        <Controller
+                            name="password"
+                            control={control}
+                            rules={{ required: 'Senha é obrigatória' }}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    type="password"
+                                    margin="normal"
+                                    fullWidth
+                                    label="Senha"
+                                    disabled={readOnly}
+                                    error={!!errors.password}
+                                    helperText={errors.password?.message}
+                                />
+                            )}
+                        />
+                    )}
                 </Box>
             </DialogContent>
 
@@ -122,7 +179,7 @@ export default function CreateEditAdminModal({
                         onClick={handleSubmit(onSubmit)}
                         disabled={loading}
                     >
-                        {loading ? 'Salvando...' : 'Salvar'}
+                        {loading ? 'Salvando...' : isEditMode ? 'Atualizar' : 'Salvar'}
                     </Button>
                 )}
             </DialogActions>

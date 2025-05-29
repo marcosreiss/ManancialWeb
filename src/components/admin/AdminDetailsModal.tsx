@@ -23,10 +23,8 @@ export default function AdminDetailsModal({
 }: AdminDetailsModalProps) {
     if (!admin) return null;
 
-    const format = (value?: string | null) => {
-        if (!value) return '—';
-        return value;
-    };
+    const format = (value?: string | null) => (value ? value : '—');
+    const formatBoolean = (value?: boolean) => (value ? 'Ativo' : 'Inativo');
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -56,6 +54,24 @@ export default function AdminDetailsModal({
                             CPF
                         </Typography>
                         <Typography variant="body1">{format(admin.cpf)}</Typography>
+                    </Stack>
+
+                    <Divider />
+
+                    <Stack>
+                        <Typography variant="subtitle2" color="text.secondary">
+                            Telefone
+                        </Typography>
+                        <Typography variant="body1">{format(admin.phoneNumber)}</Typography>
+                    </Stack>
+
+                    <Divider />
+
+                    <Stack>
+                        <Typography variant="subtitle2" color="text.secondary">
+                            Status
+                        </Typography>
+                        <Typography variant="body1">{formatBoolean(admin.isActive)}</Typography>
                     </Stack>
                 </Stack>
             </DialogContent>

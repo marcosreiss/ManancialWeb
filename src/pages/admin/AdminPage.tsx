@@ -3,10 +3,11 @@ import {
   Typography,
   TablePagination,
 } from '@mui/material';
-import { useState, useMemo, useRef } from 'react';
+import { useState } from 'react';
 import {
-  useAdmins,
+  useGetAdmins,
   useUpdateAdmin,
+  useCreateAdmin,
   useDeleteAdmin,
 } from '@/hooks/useAdmin';
 import { useNotification } from '@/context/NotificationContext';
@@ -20,22 +21,15 @@ import AdminTable from '@/components/admin/AdminTable';
 import CreateEditAdminModal from '@/components/admin/CreateEditAdminModal';
 
 export default function AdminPage() {
-  const { data, isLoading } = useAdmins();
-  const updateMutation = useUpdateAdmin();
-  const deleteMutation = useDeleteAdmin();
-  const { addNotification } = useNotification();
-
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selected, setSelected] = useState<Admin[]>([]);
   const [searchValue, setSearchValue] = useState('');
-  const [debouncedSearchString, setDebouncedSearchString] = useState('');
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('edit');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [, setModalMode] = useState<'edit'>('edit'); // apenas edição
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -43,39 +37,19 @@ export default function AdminPage() {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuAdmin, setMenuAdmin] = useState<Admin | null>(null);
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
-    setSearchValue(inputValue);
+  const { addNotification } = useNotification();
 
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+  const { data, isLoading } = useGetAdmins({
+    pageNumber: page + 1,
+    pageSize: rowsPerPage,
+  });
 
-    if (inputValue.length >= 3) {
-      debounceTimeoutRef.current = setTimeout(() => {
-        setDebouncedSearchString(inputValue.toLowerCase());
-      }, 500);
-    } else {
-      setDebouncedSearchString('');
-    }
-  };
-
-  const filteredAdmins = useMemo(() => {
-    if (!data) return [];
-    if (!debouncedSearchString) return data;
-    return data.filter((admin) =>
-      admin.fullName.toLowerCase().includes(debouncedSearchString) ||
-      admin.email.toLowerCase().includes(debouncedSearchString)
-    );
-  }, [data, debouncedSearchString]);
-
-  const paginatedAdmins = useMemo(() => {
-    const start = page * rowsPerPage;
-    return filteredAdmins.slice(start, start + rowsPerPage);
-  }, [filteredAdmins, page, rowsPerPage]);
+  const updateMutation = useUpdateAdmin();
+  const createMutation = useCreateAdmin();
+  const deleteMutation = useDeleteAdmin();
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelected(e.target.checked ? filteredAdmins : []);
+    setSelected(e.target.checked ? data?.data || [] : []);
   };
 
   const handleSelectOne = (admin: Admin) => {
@@ -112,7 +86,7 @@ export default function AdminPage() {
       setDialogOpen(false);
       setSelected([]);
     } catch {
-      // Erros já notificados
+      // erros já tratados
     } finally {
       setDeleteLoading(false);
     }
@@ -120,26 +94,56 @@ export default function AdminPage() {
 
   const handleSave = (admin: Admin) => {
     setModalLoading(true);
-    updateMutation.mutate(
-      { id: admin.id, payload: admin },
-      {
-        onSuccess: () => {
-          addNotification('Admin atualizado com sucesso.', 'success');
-          setModalOpen(false);
+
+    const payload = {
+      ...admin,
+      cpf: admin.cpf ?? '',
+    };
+
+    if (modalMode === 'edit') {
+      updateMutation.mutate(
+        { id: admin.id, payload },
+        {
+          onSuccess: () => {
+            addNotification('Admin atualizado com sucesso.', 'success');
+            setModalOpen(false);
+          },
+          onError: () => {
+            addNotification('Erro ao atualizar admin.', 'error');
+          },
+          onSettled: () => {
+            setModalLoading(false);
+          },
+        }
+      );
+    } else {
+      createMutation.mutate(
+        {
+          fullName: payload.fullName,
+          cpf: payload.cpf,
+          email: payload.email,
+          phoneNumber: payload.phoneNumber,
+          password: 'Admin123!', // pode ser solicitado do usuário depois
         },
-        onError: () => {
-          addNotification('Erro ao atualizar admin.', 'error');
-        },
-        onSettled: () => {
-          setModalLoading(false);
-        },
-      }
-    );
+        {
+          onSuccess: () => {
+            addNotification('Admin criado com sucesso.', 'success');
+            setModalOpen(false);
+          },
+          onError: () => {
+            addNotification('Erro ao criar admin.', 'error');
+          },
+          onSettled: () => {
+            setModalLoading(false);
+          },
+        }
+      );
+    }
   };
 
-  const openModal = (admin: Admin) => {
-    setModalMode('edit');
-    setCurrentAdmin(admin);
+  const openModal = (mode: 'create' | 'edit', admin?: Admin) => {
+    setModalMode(mode);
+    setCurrentAdmin(admin || null);
     setModalOpen(true);
   };
 
@@ -154,15 +158,15 @@ export default function AdminPage() {
 
       <ToolbarComponent
         searchValue={searchValue}
-        onSearchChange={handleSearchChange}
-        onCreateClick={() => {}}
+        onSearchChange={(e) => setSearchValue(e.target.value)}
+        onCreateClick={() => openModal('create')}
         onDeleteClick={() => setDialogOpen(true)}
         selectedCount={selected.length}
         createLabel="Novo Admin"
       />
 
       <AdminTable
-        admins={paginatedAdmins}
+        admins={data?.data || []}
         selected={selected}
         loading={isLoading}
         onSelectAll={handleSelectAll}
@@ -172,7 +176,7 @@ export default function AdminPage() {
 
       <TablePagination
         component="div"
-        count={filteredAdmins.length}
+        count={data?.totalRecords || 0}
         page={page}
         onPageChange={(_, newPage) => setPage(newPage)}
         rowsPerPage={rowsPerPage}
@@ -222,7 +226,7 @@ export default function AdminPage() {
           {
             label: 'Editar',
             icon: <Edit fontSize="small" />,
-            onClick: openModal,
+            onClick: (admin) => openModal('edit', admin),
           },
           {
             label: 'Excluir',
