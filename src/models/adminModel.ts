@@ -2,8 +2,24 @@ export interface Admin {
   id: string;
   fullName: string;
   email: string;
-  cpf: string;
-  profilePictureUrl?: string;
-  isActive: boolean;
+  phoneNumber: string;
+  cpf: string | null;
   createdAt: string;
+  isActive: boolean;
+}
+
+export interface CreateAdminPayload {
+  fullName: string;
+  cpf: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+}
+
+export interface UpdateAdminPayload {
+  id: string;
+  fullName: string;
+  cpf: string;
+  isActive: boolean;
+  phoneNumber: string;
 }

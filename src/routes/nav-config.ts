@@ -2,6 +2,7 @@
 import {
   Home,
   Store,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 
@@ -23,4 +24,9 @@ export const navData: NavItem[] = [
     path: '/produtos',
     icon: Store,
   },
+  {
+    title: "Admin",
+    path: "/admin",
+    icon: AdminPanelSettings,
+  }
 ];

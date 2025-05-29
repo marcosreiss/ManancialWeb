@@ -1,40 +1,62 @@
-// hooks/useAdmin.ts
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
 import {
   getAdminsService,
   getAdminByIdService,
+  createAdminService,
   updateAdminService,
   deleteAdminService,
 } from "@/services/adminService";
-import type { Admin } from "@/models/adminModel";
+
+import type {
+  Admin,
+  CreateAdminPayload,
+  UpdateAdminPayload,
+} from "@/models/adminModel";
+
+import type { ListRequest, ListResponse } from "@/models/common/listModel";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 
-// Lista todos os admins
-export const useAdmins = () => {
-  return useQuery<Admin[], AxiosError>({
-    queryKey: ["admins"],
-    queryFn: getAdminsService,
+/**
+ * Lista admins com filtros de paginação
+ */
+export const useGetAdmins = (params: ListRequest) =>
+  useQuery<ListResponse<Admin>, AxiosError>({
+    queryKey: ["admins", params],
+    queryFn: () => getAdminsService(params),
   });
-};
 
-// Busca um admin específico
-export const useAdminById = (id: string) => {
-  return useQuery<Admin, AxiosError>({
+/**
+ * Busca um admin por ID
+ */
+export const useGetAdminById = (id: string) =>
+  useQuery<Admin, AxiosError>({
     queryKey: ["admin", id],
     queryFn: () => getAdminByIdService(id),
     enabled: !!id,
   });
+
+/**
+ * Criação de admin
+ */
+export const useCreateAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Admin, AxiosError, CreateAdminPayload>({
+    mutationFn: (payload) => createAdminService(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    },
+  });
 };
 
-// Atualiza um admin
+/**
+ * Atualização de admin
+ */
 export const useUpdateAdmin = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Admin, AxiosError, { id: string; payload: Partial<Admin> }>({
+  return useMutation<Admin, AxiosError, { id: string; payload: UpdateAdminPayload }>({
     mutationFn: ({ id, payload }) => updateAdminService(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admins"] });
@@ -42,12 +64,14 @@ export const useUpdateAdmin = () => {
   });
 };
 
-// Deleta um admin
+/**
+ * Exclusão de admin
+ */
 export const useDeleteAdmin = () => {
   const queryClient = useQueryClient();
 
   return useMutation<void, AxiosError, string>({
-    mutationFn: deleteAdminService,
+    mutationFn: (id) => deleteAdminService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admins"] });
     },
