@@ -47,7 +47,7 @@ export default function Login() {
 
             setToken(token);
             addNotification('Login realizado com sucesso!', 'success');
-            router.push('/dashboard'); // Altere para sua rota desejada
+            router.push('/'); // Altere para sua rota desejada
           } catch (err) {
             console.error('Erro ao decodificar token:', err);
             addNotification('Erro ao processar autenticação.', 'error');

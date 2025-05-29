@@ -11,7 +11,7 @@ interface AuthContextType {
   setUsername: (username: string | null) => void;
   setRole: (role: string | null) => void;
   isAuthenticated: () => boolean | null;
-  useLogout: () => void;
+  logout: () => void; // Renomeado aqui
 }
 
 interface DecodedToken {
@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [token, isLoading]);
 
-  const useLogout = useCallback(() => {
+  const logout = useCallback(() => {
     setToken(null);
     setUsername(null);
     setRole(null);
@@ -149,8 +149,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [setToken, setUsername, setRole, router]);
 
   const memorizedValue = useMemo(
-    () => ({ token, username, role, setToken, setUsername, setRole, isAuthenticated, useLogout }),
-    [token, username, role, setToken, setUsername, setRole, isAuthenticated, useLogout]
+    () => ({ token, username, role, setToken, setUsername, setRole, isAuthenticated, logout }),
+    [token, username, role, setToken, setUsername, setRole, isAuthenticated, logout]
   );
 
   return (

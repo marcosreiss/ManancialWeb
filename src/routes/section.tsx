@@ -7,7 +7,7 @@ import BlankLayout from '../layout/blanckLayout';
 import DashboardLayout from '../layout/dashboardLayout';
 
 const SignInPage = lazy(() => import('@/pages/login'));
-const CustomersPage = lazy(() => import('@/pages/cliente/clienteIndex'));
+const HomePage = lazy(() => import('@/pages/home'));
 
 const renderFallback = (
     <Box display="flex" alignItems="center" justifyContent="center" flex="1 1 auto">
@@ -35,8 +35,7 @@ export function PrivateRouter() {
                 </DashboardLayout>
             ),
             children: [
-                { index: true, element: <Navigate to="customers" replace /> },
-                { path: 'customers', element: <CustomersPage /> },
+                { index: true, element: <HomePage /> },
             ],
         },
         { path: '*', element: <Navigate to="/login" replace /> },
@@ -47,7 +46,7 @@ export function PrivateRouter() {
 export function PublicRouter() {
     return useRoutes([
         {
-            path: '/login',
+            path: '/',
             element: (
                 <BlankLayout>
                     <Suspense fallback={renderFallback}>
@@ -56,6 +55,6 @@ export function PublicRouter() {
                 </BlankLayout>
             ),
         },
-        { path: '*', element: <Navigate to="/login" replace /> },
+        { path: '*', element: <Navigate to="/" replace /> },
     ]);
 }
