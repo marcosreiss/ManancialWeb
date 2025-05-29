@@ -8,6 +8,7 @@ import DashboardLayout from '../layout/dashboardLayout';
 
 const SignInPage = lazy(() => import('@/pages/login'));
 const HomePage = lazy(() => import('@/pages/home'));
+const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 
 const renderFallback = (
     <Box display="flex" alignItems="center" justifyContent="center" flex="1 1 auto">
@@ -38,7 +39,13 @@ export function PrivateRouter() {
                 { index: true, element: <HomePage /> },
             ],
         },
-        { path: '*', element: <Navigate to="/login" replace /> },
+        { path: '*', element: (
+            <DashboardLayout>
+                    <Suspense fallback={renderFallback}>
+                        <NotFoundPage />
+                    </Suspense>
+                </DashboardLayout>
+        ) },
     ]);
 }
 
