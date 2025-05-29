@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-
 import { jwtDecode } from "jwt-decode";
 import React, { useMemo, useState, useEffect, useContext, useCallback, createContext } from "react";
-
 import { useRouter } from "@/routes/hooks";
 
 interface AuthContextType {
@@ -17,9 +15,9 @@ interface AuthContextType {
 }
 
 interface DecodedToken {
-  exp: number; // Campo de expiração (em segundos desde 1970-01-01T00:00:00Z)
-  username?: string; // Nome de usuário
-  role?: string; // Papel do usuário
+  exp: number;
+  username?: string;
+  role?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,17 +30,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setTokenState] = useState<string | null>(null);
   const [username, setUsernameState] = useState<string | null>(null);
   const [role, setRoleState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Adiciona o estado de carregamento
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   const setToken = useCallback((newToken: string | null) => {
-    setTokenState(newToken);
     if (newToken) {
-      localStorage.setItem("authToken", newToken); 
+      try {
+        const decoded: DecodedToken = jwtDecode(newToken);
+        const currentTime = Date.now() / 1000;
+
+        if (decoded.exp <= currentTime || decoded.role !== "Admin") {
+          throw new Error("Token expirado ou sem permissão");
+        }
+
+        setTokenState(newToken);
+        setUsernameState(decoded.username ?? null);
+        setRoleState(decoded.role ?? null);
+        localStorage.setItem("authToken", newToken);
+        localStorage.setItem("authUsername", decoded.username ?? "");
+        localStorage.setItem("authRole", decoded.role ?? "");
+      } catch (error) {
+        console.error("Token inválido ou sem permissão:", error);
+        setTokenState(null);
+        setUsernameState(null);
+        setRoleState(null);
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUsername");
+        localStorage.removeItem("authRole");
+        router.push("/");
+      }
     } else {
+      setTokenState(null);
+      setUsernameState(null);
+      setRoleState(null);
       localStorage.removeItem("authToken");
+      localStorage.removeItem("authUsername");
+      localStorage.removeItem("authRole");
     }
-  }, []);
+  }, [router]);
 
   const setUsername = useCallback((newUsername: string | null) => {
     setUsernameState(newUsername);
@@ -64,57 +89,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const savedToken = localStorage.getItem("authToken");
-    const savedUsername = localStorage.getItem("authUsername");
-    const savedRole = localStorage.getItem("authRole");
 
     if (savedToken) {
-      setTokenState(savedToken);
-      setUsernameState(savedUsername);
-      setRoleState(savedRole);
-
       try {
         const decoded: DecodedToken = jwtDecode(savedToken);
         const currentTime = Date.now() / 1000;
 
-        if (decoded.exp <= currentTime) {
-          setToken(null); // Remove o token expirado
+        if (decoded.exp <= currentTime || decoded.role !== "Admin") {
+          throw new Error("Token expirado ou sem permissão");
+        }
+
+        setTokenState(savedToken);
+        setUsernameState(decoded.username ?? null);
+        setRoleState(decoded.role ?? null);
+
+        const timeout = (decoded.exp - currentTime) * 1000;
+        const timer = setTimeout(() => {
+          setToken(null);
           setUsername(null);
           setRole(null);
           router.push("/");
-        } else {
-          const timeout = (decoded.exp - currentTime) * 1000;
-          const timer = setTimeout(() => {
-            setToken(null);
-            setUsername(null);
-            setRole(null);
-            router.push("/");
-          }, timeout);
+        }, timeout);
 
-          setIsLoading(false); // Finaliza o carregamento
-          return () => clearTimeout(timer);
-        }
+        setIsLoading(false);
+        return () => clearTimeout(timer);
       } catch (error) {
-        console.error("Erro ao decodificar o token:", error);
+        console.error("Token inválido ao carregar:", error);
         setToken(null);
         setUsername(null);
         setRole(null);
+        router.push("/");
       }
     } else {
-      setIsLoading(false); // Finaliza o carregamento se não houver token
+      setIsLoading(false);
     }
+
     return undefined;
   }, [setToken, setUsername, setRole, router]);
 
   const isAuthenticated = useCallback(() => {
-    if (isLoading) return null; // Ou outro comportamento, como mostrar um placeholder
+    if (isLoading) return null;
     if (!token) return false;
 
     try {
       const decoded: DecodedToken = jwtDecode(token);
       const currentTime = Date.now() / 1000;
-      return decoded.exp > currentTime;
+      return decoded.exp > currentTime && decoded.role === "Admin";
     } catch (error) {
-      console.error("Erro ao decodificar o token:", error);
+      console.log(error);
       return false;
     }
   }, [token, isLoading]);
