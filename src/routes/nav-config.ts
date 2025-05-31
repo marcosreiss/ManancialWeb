@@ -3,6 +3,8 @@ import {
   Home,
   Store,
   AdminPanelSettings,
+  People
+  
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 
@@ -28,5 +30,10 @@ export const navData: NavItem[] = [
     title: "Admin",
     path: "/admin",
     icon: AdminPanelSettings,
+  },
+  {
+    title: "Clientes",
+    path: "clientes",
+    icon: People,
   }
 ];

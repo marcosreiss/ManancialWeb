@@ -10,6 +10,7 @@ const SignInPage = lazy(() => import('@/pages/login'));
 const HomePage = lazy(() => import('@/pages/home'));
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
+const CustomerPage = lazy(() => import('@/pages/customer/CustomerPage'));
 
 const renderFallback = (
     <Box display="flex" alignItems="center" justifyContent="center" flex="1 1 auto">
@@ -38,7 +39,8 @@ export function PrivateRouter() {
             ),
             children: [
                 { index: true, element: <HomePage /> },
-                {path: "admin", element: <AdminPage />}
+                {path: "admin", element: <AdminPage />},
+                {path: "clientes", element: <CustomerPage />},
             ],
         },
         { path: '*', element: (
