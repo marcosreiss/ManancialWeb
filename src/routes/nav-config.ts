@@ -1,12 +1,11 @@
-// nav-config.ts
 import {
   Home,
   Store,
   AdminPanelSettings,
-  People
-  
-} from '@mui/icons-material';
-import type { SvgIconComponent } from '@mui/icons-material';
+  People,
+  LocalShipping, // ícone para motoristas
+} from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 
 export type NavItem = {
   title: string;
@@ -17,13 +16,13 @@ export type NavItem = {
 
 export const navData: NavItem[] = [
   {
-    title: 'Página Inicial',
-    path: '/',
+    title: "Página Inicial",
+    path: "/",
     icon: Home,
   },
   {
-    title: 'Produtos',
-    path: '/produtos',
+    title: "Produtos",
+    path: "/produtos",
     icon: Store,
   },
   {
@@ -33,7 +32,12 @@ export const navData: NavItem[] = [
   },
   {
     title: "Clientes",
-    path: "clientes",
+    path: "/clientes",
     icon: People,
-  }
+  },
+  {
+    title: "Caçambeiros",
+    path: "/cacambeiros",
+    icon: LocalShipping,
+  },
 ];
