@@ -8,10 +8,13 @@ import {
     TextField,
     FormControlLabel,
     Switch,
+    IconButton,
+    InputAdornment,
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Admin } from '@/models/adminModel';
+import { VisibilityOff, Visibility } from '@mui/icons-material';
 
 type FormAdmin = Admin & { password?: string };
 
@@ -33,6 +36,7 @@ export default function CreateEditAdminModal({
     loading = false,
 }: Props) {
     const isEditMode = !!initialData;
+    const [showPassword, setShowPassword] = useState(false);
 
     const {
         control,
@@ -178,13 +182,25 @@ export default function CreateEditAdminModal({
                             render={({ field }) => (
                                 <TextField
                                     {...field}
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     margin="normal"
                                     fullWidth
                                     label="Senha"
                                     disabled={readOnly}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword((prev) => !prev)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                 />
                             )}
                         />
