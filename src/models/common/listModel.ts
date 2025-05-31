@@ -2,6 +2,7 @@
 export interface ListRequest {
   pageNumber: number;
   pageSize: number;
+  search: string;
 }
 
 // Resposta genérica de listagem paginada

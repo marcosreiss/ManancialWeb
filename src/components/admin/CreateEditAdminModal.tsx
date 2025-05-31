@@ -6,6 +6,8 @@ import {
     DialogContent,
     DialogTitle,
     TextField,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
@@ -148,6 +150,25 @@ export default function CreateEditAdminModal({
                             />
                         )}
                     />
+                    {isEditMode && (
+                        <Controller
+                            name="isActive"
+                            control={control}
+                            render={({ field }) => (
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            {...field}
+                                            checked={field.value}
+                                            onChange={(e) => field.onChange(e.target.checked)}
+                                            disabled={readOnly}
+                                        />
+                                    }
+                                    label="Ativo"
+                                />
+                            )}
+                        />
+                    )}
 
                     {!isEditMode && (
                         <Controller

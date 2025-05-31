@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 
 /**
- * Lista admins com filtros de paginação
+ * Lista admins com filtros de paginação e busca
  */
 export const useGetAdmins = (params: ListRequest) =>
   useQuery<ListResponse<Admin>, AxiosError>({

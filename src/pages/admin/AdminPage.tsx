@@ -3,7 +3,7 @@ import {
   Typography,
   TablePagination,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   useGetAdmins,
   useUpdateAdmin,
@@ -25,6 +25,9 @@ export default function AdminPage() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selected, setSelected] = useState<Admin[]>([]);
   const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('edit');
@@ -40,9 +43,11 @@ export default function AdminPage() {
   const { addNotification } = useNotification();
 
   const { data, isLoading } = useGetAdmins({
-    pageNumber: page + 1,
-    pageSize: rowsPerPage,
-  });
+  pageNumber: page + 1,
+  pageSize: rowsPerPage,
+  search: debouncedSearch,
+});
+
 
   const updateMutation = useUpdateAdmin();
   const createMutation = useCreateAdmin();
@@ -59,6 +64,26 @@ export default function AdminPage() {
         : [...prev, admin]
     );
   };
+
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (searchValue.length >= 3 || searchValue.length === 0) {
+        setDebouncedSearch(searchValue);
+        setPage(0); // Reinicia a paginação ao buscar
+      }
+    }, 500);
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchValue]);
+
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>, admin: Admin) => {
     setMenuAnchorEl(e.currentTarget);
@@ -242,3 +267,5 @@ export default function AdminPage() {
     </Box>
   );
 }
+
+
