@@ -14,6 +14,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import type { Product } from "@/models/productModel";
+import ImageCropper from "@/components/shared/ImageCropper";
 
 type FormProduct = {
     id?: string;
@@ -43,6 +44,8 @@ export default function CreateEditProductModal({
     const isEditMode = !!initialData;
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageCropSrc, setImageCropSrc] = useState<string | null>(null);
+    const [cropperOpen, setCropperOpen] = useState(false);
 
     const {
         control,
@@ -71,7 +74,6 @@ export default function CreateEditProductModal({
                 });
                 setImagePreview(initialData.productPictureUrl || null);
             } else {
-                // 🛠 Corrige bug: limpa todos os campos e o preview
                 reset({
                     id: "",
                     name: "",
@@ -84,108 +86,134 @@ export default function CreateEditProductModal({
         }
     }, [open, isEditMode, initialData, reset]);
 
-
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] || null;
+        const file = e.target.files?.[0];
         if (file) {
-            setImagePreview(URL.createObjectURL(file));
-            setValue("imageFile", file);
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImageCropSrc(reader.result as string);
+                setCropperOpen(true);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
+    const handleCropComplete = (file: File) => {
+        setValue("imageFile", file);
+        setImagePreview(URL.createObjectURL(file));
+        setCropperOpen(false);
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle>{isEditMode ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+        <>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+                <DialogTitle>{isEditMode ? "Editar Produto" : "Novo Produto"}</DialogTitle>
 
-            <DialogContent dividers>
-                <Box component="form" noValidate>
-                    <Controller
-                        name="name"
-                        control={control}
-                        rules={{ required: "Nome é obrigatório" }}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Nome"
-                                fullWidth
-                                margin="normal"
-                                disabled={readOnly}
-                                error={!!errors.name}
-                                helperText={errors.name?.message}
-                            />
+                <DialogContent dividers>
+                    <Box component="form" noValidate>
+                        <Controller
+                            name="name"
+                            control={control}
+                            rules={{ required: "Nome é obrigatório" }}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Nome"
+                                    fullWidth
+                                    margin="normal"
+                                    disabled={readOnly}
+                                    error={!!errors.name}
+                                    helperText={errors.name?.message}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            name="description"
+                            control={control}
+                            rules={{ required: "Descrição é obrigatória" }}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Descrição"
+                                    fullWidth
+                                    multiline
+                                    minRows={3}
+                                    margin="normal"
+                                    disabled={readOnly}
+                                    error={!!errors.description}
+                                    helperText={errors.description?.message}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            name="isActive"
+                            control={control}
+                            render={({ field }) => (
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            {...field}
+                                            checked={field.value}
+                                            onChange={(e) => field.onChange(e.target.checked)}
+                                            disabled={readOnly}
+                                        />
+                                    }
+                                    label="Produto ativo"
+                                />
+                            )}
+                        />
+
+                        {!readOnly && (
+                            <Box mt={2}>
+                                <InputLabel>Imagem do produto</InputLabel>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
+                            </Box>
                         )}
-                    />
 
-                    <Controller
-                        name="description"
-                        control={control}
-                        rules={{ required: "Descrição é obrigatória" }}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Descrição"
-                                fullWidth
-                                multiline
-                                minRows={3}
-                                margin="normal"
-                                disabled={readOnly}
-                                error={!!errors.description}
-                                helperText={errors.description?.message}
-                            />
+                        {imagePreview && (
+                            <Box mt={2}>
+                                <Typography variant="caption">Pré-visualização:</Typography>
+                                <Box
+                                    component="img"
+                                    src={imagePreview}
+                                    alt="Pré-visualização"
+                                    sx={{ mt: 1, maxHeight: 180, borderRadius: 2 }}
+                                />
+                            </Box>
                         )}
-                    />
+                    </Box>
+                </DialogContent>
 
-                    <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field }) => (
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        {...field}
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                        disabled={readOnly}
-                                    />
-                                }
-                                label="Produto ativo"
-                            />
-                        )}
-                    />
-
+                <DialogActions>
+                    <Button onClick={onClose}>Cancelar</Button>
                     {!readOnly && (
-                        <Box mt={2}>
-                            <InputLabel>Imagem do produto</InputLabel>
-                            <input type="file" accept="image/*" onChange={handleImageChange} />
-                        </Box>
+                        <Button
+                            variant="contained"
+                            onClick={handleSubmit(onSubmit)}
+                            disabled={loading}
+                        >
+                            {loading ? "Salvando..." : isEditMode ? "Atualizar" : "Salvar"}
+                        </Button>
                     )}
+                </DialogActions>
+            </Dialog>
 
-                    {imagePreview && (
-                        <Box mt={2}>
-                            <Typography variant="caption">Pré-visualização:</Typography>
-                            <Box
-                                component="img"
-                                src={imagePreview}
-                                alt="Pré-visualização"
-                                sx={{ mt: 1, maxHeight: 180, borderRadius: 2 }}
-                            />
-                        </Box>
-                    )}
-                </Box>
-            </DialogContent>
-
-            <DialogActions>
-                <Button onClick={onClose}>Cancelar</Button>
-                {!readOnly && (
-                    <Button
-                        variant="contained"
-                        onClick={handleSubmit(onSubmit)}
-                        disabled={loading}
-                    >
-                        {loading ? "Salvando..." : isEditMode ? "Atualizar" : "Salvar"}
-                    </Button>
-                )}
-            </DialogActions>
-        </Dialog>
+            {imageCropSrc && (
+                <ImageCropper
+                    open={cropperOpen}
+                    imageSrc={imageCropSrc}
+                    onClose={() => setCropperOpen(false)}
+                    onComplete={handleCropComplete}
+                    aspect={4 / 3}
+                    outputSize={{ width: 800, height: 600 }}
+                />
+            )}
+        </>
     );
 }
