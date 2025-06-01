@@ -3,7 +3,7 @@ import {
   Store,
   AdminPanelSettings,
   People,
-  LocalShipping, // ícone para motoristas
+  LocalShipping,
 } from "@mui/icons-material";
 import type { SvgIconComponent } from "@mui/icons-material";
 

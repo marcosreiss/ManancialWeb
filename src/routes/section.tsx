@@ -12,6 +12,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
 const CustomerPage = lazy(() => import('@/pages/customer/CustomerPage'));
 const DriverPage = lazy(() => import('@/pages/driver/DriverPage'));
+const ProductPage = lazy(() => import('@/pages/product/ProductPage'));
 
 const renderFallback = (
     <Box display="flex" alignItems="center" justifyContent="center" flex="1 1 auto">
@@ -43,6 +44,7 @@ export function PrivateRouter() {
                 {path: "admin", element: <AdminPage />},
                 {path: "clientes", element: <CustomerPage />},
                 {path: "cacambeiros", element: <DriverPage />},
+                {path: "produtos", element: <ProductPage />},
             ],
         },
         { path: '*', element: (
