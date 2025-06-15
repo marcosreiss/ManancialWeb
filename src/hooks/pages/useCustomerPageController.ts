@@ -1,56 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Customer } from "@/models/customerModel";
 import { useGetCustomers, useDeleteCustomer } from "@/hooks/useCustomer";
 import { useNotification } from "@/context/NotificationContext";
 
-interface UseCustomerPageController {
-  customers: Customer[];
-  totalRecords: number;
-  isLoading: boolean;
-
-  page: number;
-  rowsPerPage: number;
-  handleChangePage: (newPage: number) => void;
-  handleChangeRowsPerPage: (newRows: number) => void;
-
-  searchValue: string;
-  setSearchValue: (value: string) => void;
-
-  selectedIds: string[];
-  handleSelectAll: () => void;
-  handleSelectOne: (id: string) => void;
-
-  createModalOpen: boolean;
-  openCreateModal: () => void;
-  closeCreateModal: () => void;
-
-  editModalOpen: boolean;
-  editCustomerId: string | null;
-  openEditModal: (id: string) => void;
-  closeEditModal: () => void;
-
-  detailsModalOpen: boolean;
-  detailsCustomerId: string | null;
-  openDetailsModal: (id: string) => void;
-  closeDetailsModal: () => void;
-
-  deleteDialogOpen: boolean;
-  openDeleteDialog: () => void;
-  closeDeleteDialog: () => void;
-  handleDeleteSelected: () => Promise<void>;
-  deleteLoading: boolean;
-
-  menuAnchorEl: HTMLElement | null;
-  menuCustomerId: string | null;
-  handleMenuOpen: (
-    e: React.MouseEvent<HTMLElement>,
-    customerId: string
-  ) => void;
-  handleMenuClose: () => void;
-  handleMenuOptionClick: (action: "details" | "edit" | "delete") => void;
-}
-
-export function useCustomerPageController(): UseCustomerPageController {
+export function useCustomerPageController() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -63,24 +16,28 @@ export function useCustomerPageController(): UseCustomerPageController {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editCustomerId, setEditCustomerId] = useState<string | null>(null);
+
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsCustomerId, setDetailsCustomerId] = useState<string | null>(
     null
   );
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
 
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuCustomerId, setMenuCustomerId] = useState<string | null>(null);
+  const [menuCustomer, setMenuCustomer] = useState<Customer | null>(null);
 
   const { addNotification } = useNotification();
+  const deleteMutation = useDeleteCustomer();
+
   const { data, isLoading } = useGetCustomers({
     pageNumber: page + 1,
     pageSize: rowsPerPage,
     search: debouncedSearch,
   });
 
-  const deleteMutation = useDeleteCustomer();
-
+  // Debounce Search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -94,98 +51,89 @@ export function useCustomerPageController(): UseCustomerPageController {
     };
   }, [searchValue]);
 
-  const handleChangePage = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
+  // Pagination
+  const handleChangePage = (newPage: number) => setPage(newPage);
 
-  const handleChangeRowsPerPage = useCallback((newRows: number) => {
+  const handleChangeRowsPerPage = (newRows: number) => {
     setRowsPerPage(newRows);
     setPage(0);
-  }, []);
+  };
 
-  const handleSelectAll = useCallback(() => {
-    if (data?.data) {
-      setSelectedIds(
-        selectedIds.length === data.data.length
-          ? []
-          : data.data.map((c) => c.id)
-      );
+  // Selection
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked && data?.data) {
+      setSelectedIds(data.data.map((c) => c.id));
+    } else {
+      setSelectedIds([]);
     }
-  }, [data, selectedIds]);
+  };
 
-  const handleSelectOne = useCallback((id: string) => {
+  const handleSelectOne = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     );
-  }, []);
+  };
 
-  const openCreateModal = useCallback(() => setCreateModalOpen(true), []);
-  const closeCreateModal = useCallback(() => setCreateModalOpen(false), []);
+  // Modals
+  const openCreateModal = () => setCreateModalOpen(true);
+  const closeCreateModal = () => setCreateModalOpen(false);
 
-  const openEditModal = useCallback((id: string) => {
-    setEditCustomerId(id);
+  const handleEditClick = (customer: Customer) => {
+    setEditCustomerId(customer.id);
     setEditModalOpen(true);
-  }, []);
-  const closeEditModal = useCallback(() => setEditModalOpen(false), []);
+  };
+  const closeEditModal = () => setEditModalOpen(false);
 
-  const openDetailsModal = useCallback((id: string) => {
-    setDetailsCustomerId(id);
+  const handleDetailsClick = (customer: Customer) => {
+    setDetailsCustomerId(customer.id);
     setDetailsModalOpen(true);
-  }, []);
-  const closeDetailsModal = useCallback(() => setDetailsModalOpen(false), []);
+  };
+  const closeDetailsModal = () => setDetailsModalOpen(false);
 
-  const openDeleteDialog = useCallback(() => setDeleteDialogOpen(true), []);
-  const closeDeleteDialog = useCallback(() => setDeleteDialogOpen(false), []);
+  const handleDeleteClick = (customer: Customer) => {
+    setDeleteTargetIds([customer.id]);
+    setDeleteDialogOpen(true);
+  };
 
-  const handleDeleteSelected = useCallback(async () => {
+  const openDeleteDialog = () => {
+    setDeleteTargetIds(selectedIds);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => setDeleteDialogOpen(false);
+
+  // Delete
+  const handleDeleteSelected = async () => {
     try {
       await Promise.all(
-        selectedIds.map((id) =>
+        deleteTargetIds.map((id) =>
           deleteMutation.mutateAsync(id).then(() => {
             addNotification(`Cliente ${id} excluído com sucesso.`, "success");
           })
         )
       );
-      setSelectedIds([]);
+      setSelectedIds((prev) =>
+        prev.filter((id) => !deleteTargetIds.includes(id))
+      );
       closeDeleteDialog();
     } catch {
       addNotification("Erro ao excluir clientes.", "error");
     }
-  }, [selectedIds, deleteMutation, addNotification, closeDeleteDialog]);
+  };
 
-  const handleMenuOpen = useCallback(
-    (e: React.MouseEvent<HTMLElement>, customerId: string) => {
-      setMenuAnchorEl(e.currentTarget);
-      setMenuCustomerId(customerId);
-    },
-    []
-  );
+  // Menu
+  const handleMenuOpen = (
+    e: React.MouseEvent<HTMLElement>,
+    customer: Customer
+  ) => {
+    setMenuAnchorEl(e.currentTarget);
+    setMenuCustomer(customer);
+  };
 
-  const handleMenuClose = useCallback(() => {
+  const handleMenuClose = () => {
     setMenuAnchorEl(null);
-    setMenuCustomerId(null);
-  }, []);
-
-  const handleMenuOptionClick = useCallback(
-    (action: "details" | "edit" | "delete") => {
-      if (!menuCustomerId) return;
-      handleMenuClose();
-
-      if (action === "details") openDetailsModal(menuCustomerId);
-      if (action === "edit") openEditModal(menuCustomerId);
-      if (action === "delete") {
-        setSelectedIds([menuCustomerId]);
-        openDeleteDialog();
-      }
-    },
-    [
-      menuCustomerId,
-      handleMenuClose,
-      openDetailsModal,
-      openEditModal,
-      openDeleteDialog,
-    ]
-  );
+    setMenuCustomer(null);
+  };
 
   return {
     customers: data?.data || [],
@@ -205,11 +153,11 @@ export function useCustomerPageController(): UseCustomerPageController {
     closeCreateModal,
     editModalOpen,
     editCustomerId,
-    openEditModal,
+    handleEditClick,
     closeEditModal,
     detailsModalOpen,
     detailsCustomerId,
-    openDetailsModal,
+    handleDetailsClick,
     closeDetailsModal,
     deleteDialogOpen,
     openDeleteDialog,
@@ -217,9 +165,9 @@ export function useCustomerPageController(): UseCustomerPageController {
     handleDeleteSelected,
     deleteLoading: deleteMutation.status === "pending",
     menuAnchorEl,
-    menuCustomerId,
+    menuCustomer,
     handleMenuOpen,
     handleMenuClose,
-    handleMenuOptionClick,
+    handleDeleteClick,
   };
 }

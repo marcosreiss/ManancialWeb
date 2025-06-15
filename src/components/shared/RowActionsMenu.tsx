@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 import {
     Menu,
     MenuItem,
     ListItemIcon,
     ListItemText,
-} from '@mui/material';
+} from "@mui/material";
 
 interface RowActionsMenuProps<T> {
     anchorEl: HTMLElement | null;
@@ -31,8 +31,8 @@ export default function RowActionsMenu<T>({
             anchorEl={anchorEl}
             open={open}
             onClose={onClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
             {entity &&
                 options.map((option, index) => (
@@ -42,7 +42,7 @@ export default function RowActionsMenu<T>({
                             onClose();
                             option.onClick(entity);
                         }}
-                        sx={{ color: option.color ?? 'inherit' }}
+                        sx={{ color: option.color ?? "inherit" }}
                     >
                         <ListItemIcon>{option.icon}</ListItemIcon>
                         <ListItemText primary={option.label} />

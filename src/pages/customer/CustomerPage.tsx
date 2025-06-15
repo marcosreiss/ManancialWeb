@@ -5,7 +5,9 @@ import CreateCustomerModal from "@/components/customer/CreateCustomerModal";
 import EditCustomerModal from "@/components/customer/EditCustomerModal";
 import CustomerDetailsModal from "@/components/customer/CustomerDetailsModal";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import RowActionsMenu from "@/components/shared/RowActionsMenu";
 import { useCustomerPageController } from "@/hooks/pages/useCustomerPageController";
+import { Visibility, Edit, Delete } from "@mui/icons-material";
 
 export default function CustomerPage() {
     const {
@@ -26,11 +28,11 @@ export default function CustomerPage() {
         closeCreateModal,
         editModalOpen,
         editCustomerId,
-        openEditModal,
+        handleEditClick,
         closeEditModal,
         detailsModalOpen,
         detailsCustomerId,
-        openDetailsModal,
+        handleDetailsClick,
         closeDetailsModal,
         deleteDialogOpen,
         openDeleteDialog,
@@ -38,10 +40,10 @@ export default function CustomerPage() {
         handleDeleteSelected,
         deleteLoading,
         menuAnchorEl,
-        menuCustomerId,
+        menuCustomer,
         handleMenuOpen,
         handleMenuClose,
-        handleMenuOptionClick,
+        handleDeleteClick,
     } = useCustomerPageController();
 
     return (
@@ -66,10 +68,6 @@ export default function CustomerPage() {
                 onSelectAll={handleSelectAll}
                 onSelectOne={handleSelectOne}
                 onMenuOpen={handleMenuOpen}
-                menuAnchorEl={menuAnchorEl}
-                menuCustomerId={menuCustomerId}
-                onMenuClose={handleMenuClose}
-                onMenuOptionClick={handleMenuOptionClick}
             />
 
             <TablePagination
@@ -112,6 +110,31 @@ export default function CustomerPage() {
                 }}
                 loading={deleteLoading}
                 entityName="cliente"
+            />
+
+            <RowActionsMenu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                entity={menuCustomer}
+                onClose={handleMenuClose}
+                options={[
+                    {
+                        label: "Visualizar",
+                        icon: <Visibility fontSize="small" />,
+                        onClick: handleDetailsClick,
+                    },
+                    {
+                        label: "Editar",
+                        icon: <Edit fontSize="small" />,
+                        onClick: handleEditClick,
+                    },
+                    {
+                        label: "Excluir",
+                        icon: <Delete fontSize="small" color="error" />,
+                        onClick: handleDeleteClick,
+                        color: "error.main",
+                    },
+                ]}
             />
         </Box>
     );
