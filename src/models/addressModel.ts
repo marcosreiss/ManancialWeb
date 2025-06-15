@@ -9,5 +9,4 @@ export interface Address {
   complement?: string | null;
   latitude: number;
   longitude: number;
-  fullAddress: string;
 }

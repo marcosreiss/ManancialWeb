@@ -7,21 +7,39 @@ import {
     Typography,
     Divider,
     Stack,
+    Box,
+    CircularProgress,
+    Paper,
 } from '@mui/material';
-import type { Customer } from '@/models/customerModel';
+import { useGetCustomerById } from '@/hooks/useCustomer';
+import { useNotification } from '@/context/NotificationContext';
+import MapViewer from '@/components/shared/MapViewer';
 
-interface CustomerDetailsModalProps {
+interface Props {
     open: boolean;
     onClose: () => void;
-    customer: Customer | null;
+    customerId: string;
 }
 
-export default function CustomerDetailsModal({
-    open,
-    onClose,
-    customer,
-}: CustomerDetailsModalProps) {
-    if (!customer) return null;
+export default function CustomerDetailsModal({ open, onClose, customerId }: Props) {
+    const { data: customer, isLoading, error } = useGetCustomerById(customerId);
+    const { addNotification } = useNotification();
+
+    if (isLoading) {
+        return (
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+                <Box display="flex" justifyContent="center" p={4}>
+                    <CircularProgress />
+                </Box>
+            </Dialog>
+        );
+    }
+
+    if (error || !customer) {
+        addNotification('Erro ao carregar detalhes do cliente.', 'error');
+        onClose();
+        return null;
+    }
 
     const format = (value?: string | null) => (value ? value : '—');
     const formatDate = (value: string) =>
@@ -32,80 +50,65 @@ export default function CustomerDetailsModal({
         });
     const formatBoolean = (value: boolean) => (value ? 'Sim' : 'Não');
 
+    const address = customer.defaultAddress;
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>Detalhes do Cliente</DialogTitle>
             <DialogContent dividers>
-                <Stack spacing={2}>
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Nome
-                        </Typography>
-                        <Typography variant="body1">{format(customer.fullName)}</Typography>
-                    </Stack>
+                <Stack spacing={3}>
+                    {/* Informações Pessoais */}
+                    <Paper elevation={1} sx={{ p: 2 }}>
+                        <Typography variant="h6" gutterBottom>Informações Pessoais</Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        <Stack spacing={1}>
+                            <Typography><strong>Nome:</strong> {format(customer.fullName)}</Typography>
+                            <Typography><strong>Email:</strong> {format(customer.email)}</Typography>
+                            <Typography><strong>Telefone:</strong> {format(customer.phoneNumber)}</Typography>
+                            <Typography><strong>CPF/CNPJ:</strong> {format(customer.cpForCNPJ)}</Typography>
+                        </Stack>
+                    </Paper>
 
-                    <Divider />
+                    {/* Endereço */}
+                    <Paper elevation={1} sx={{ p: 2 }}>
+                        <Typography variant="h6" gutterBottom>Endereço</Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        {address ? (
+                            <Stack spacing={1}>
+                                <Typography><strong>Rua:</strong> {format(address.street)}</Typography>
+                                <Typography><strong>Número:</strong> {format(address.number)}</Typography>
+                                <Typography><strong>Bairro:</strong> {format(address.neighborhood)}</Typography>
+                                <Typography><strong>Cidade:</strong> {format(address.city)}</Typography>
+                                <Typography><strong>Estado:</strong> {format(address.state)}</Typography>
+                                <Typography><strong>CEP:</strong> {format(address.zipCode)}</Typography>
+                                {address.complement && (
+                                    <Typography><strong>Complemento:</strong> {address.complement}</Typography>
+                                )}
 
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Email
-                        </Typography>
-                        <Typography variant="body1">{format(customer.email)}</Typography>
-                    </Stack>
+                                {address.latitude && address.longitude && (
+                                    <Box mt={2}>
+                                        <MapViewer
+                                            center={{ lat: address.latitude, lng: address.longitude }}
+                                            markers={[{ lat: address.latitude, lng: address.longitude }]}
+                                        />
+                                    </Box>
+                                )}
+                            </Stack>
+                        ) : (
+                            <Typography>—</Typography>
+                        )}
+                    </Paper>
 
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Telefone
-                        </Typography>
-                        <Typography variant="body1">{format(customer.phoneNumber)}</Typography>
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            CPF/CNPJ
-                        </Typography>
-                        <Typography variant="body1">{format(customer.cpForCNPJ)}</Typography>
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Endereço
-                        </Typography>
-                        <Typography variant="body1">{format(customer.defaultAddress)}</Typography>
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Informações adicionais
-                        </Typography>
-                        <Typography variant="body1">{format(customer.additionalInfo)}</Typography>
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Recebe promoções?
-                        </Typography>
-                        <Typography variant="body1">{formatBoolean(customer.receivesPromotions)}</Typography>
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack>
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Cadastrado em
-                        </Typography>
-                        <Typography variant="body1">{formatDate(customer.registeredAt)}</Typography>
-                    </Stack>
+                    {/* Outros Dados */}
+                    <Paper elevation={1} sx={{ p: 2 }}>
+                        <Typography variant="h6" gutterBottom>Outros Dados</Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        <Stack spacing={1}>
+                            <Typography><strong>Informações adicionais:</strong> {format(customer.additionalInfo)}</Typography>
+                            <Typography><strong>Recebe promoções:</strong> {formatBoolean(customer.receivesPromotions)}</Typography>
+                            <Typography><strong>Cadastrado em:</strong> {formatDate(customer.registeredAt)}</Typography>
+                        </Stack>
+                    </Paper>
                 </Stack>
             </DialogContent>
             <DialogActions>
