@@ -1,3 +1,5 @@
+import type { Address } from "./addressModel";
+
 export interface Customer {
   id: string;
   fullName: string;
@@ -5,7 +7,7 @@ export interface Customer {
   phoneNumber: string;
   cpForCNPJ?: string | null;
   registeredAt: string;
-  defaultAddress?: string | null;
+  defaultAddress?: Address | null;
   additionalInfo?: string | null;
   receivesPromotions: boolean;
 }
@@ -16,7 +18,7 @@ export interface CreateCustomerPayload {
   phoneNumber: string;
   password: string;
   cpForCNPJ?: string;
-  defaultAddress?: string;
+  defaultAddress?: Address;
   additionalInfo?: string;
   receivesPromotions: boolean;
 }
@@ -26,7 +28,7 @@ export interface UpdateCustomerPayload {
   fullName: string;
   phoneNumber: string;
   cpForCNPJ?: string;
-  defaultAddress?: string;
+  defaultAddress?: Address;
   additionalInfo?: string;
   receivesPromotions: boolean;
 }
